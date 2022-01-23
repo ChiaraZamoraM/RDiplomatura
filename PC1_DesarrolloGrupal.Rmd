@@ -1,0 +1,79 @@
+---
+title: 'Práctica calificada 1: Desarrollo Grupal'
+output:
+  html_document:
+    df_print: paged
+---
+
+a) Suba la base de datos a utilizar a un repositorio de GitHub, cárguela y presente una breve descripción (1pt). De no contar con base para trabajo, puede revisar la página de Kaggle.com.
+```{r}
+library(rio)
+
+BaseDistrital=import("https://github.com/ChiaraZamoraM/RDiplomatura/raw/main/BaseDistrital.csv")
+```
+
+```{r}
+str(BaseDistrital)
+```
+
+La base de datos "BaseDistrital" contiene, entre otras variables, el partido ganador de la primera (Ganador1) y el partido ganador de la segunda vuelta (Ganador2) de las Elecciones Generales 2021. Asimismo contiene el porcentaje de personas mayores de 18 completamente vacunadas (Avance).Para conocer cómo se consiguieron las variables puede revisar el RMD "Limpieza_TrabajoFinal".
+
+b) Planteamiento del problema y pregunta de investigación, objetivo principal y objetivos secundarios (1pt).
+
+**Pregunta y subpreguntas de investigación**
+
+A diciembre de 2021, ¿cuál era el avance acumulado de la vacunación en los distritos según el partido con mayoría de votos válidos en la primera y segunda vuelta de las Elecciones Generales 2021?
+
+* Hacia la segunda vuelta de las EG 2021, ¿existía diferencia en el avance de la vacunación entre los distritos en los que ganó Pedro Castillo y en los que lo hizo Keiko Fujimori?
+
+* Tras asumir la Presidencia de la República Pedro Castillo, ¿el avance de la vacunación ha favorecido a los distritos en los que ganó Perú Libre?
+
+**Objetivo principal y objetivos secundarios**
+
+Determinar si, a diciembre de 2021, el avance acumulado de la vacunación era similar en los distritos en los que ganó Perú Libre respecto a aquellos en los que lo hizo Fuerza Popular.
+
+* Determinar si, hacia la segunda vuelta de las EG 2021, los distritos en los que ganó Pedro Castillo tenían un menor avance en la vacunación que los distritos en los que ganó Keiko Fujimori.
+
+* Determinar si, tras asumir la Presidencia de la República Pedro Castillo, la vacunación no ha favorecido a los distritos en los que ganó Perú Libre.
+
+c) Análisis exploratorio de las principales variables que se utilizarán para la app (3pt).
+
+```{r}
+library(tidyverse)
+Elecciones1= BaseDistrital %>%
+  group_by(Ganador1) %>% 
+   summarise(mean =  mean(Avance), 
+             wm = sum(Poblacion18*Avance)/sum(Poblacion18)) 
+Elecciones1$Vuelta="Primera vuelta"
+
+Elecciones2= BaseDistrital %>%
+  group_by(Ganador2) %>% 
+   summarise(mean =  mean(Avance), 
+             wm = sum(Poblacion18*Avance)/sum(Poblacion18)) 
+Elecciones2$Vuelta="Segunda vuelta"
+
+EleccionesVacuna=merge(Elecciones1, Elecciones2, all=TRUE, by.x=c("Ganador1","mean","wm","Vuelta"),
+                       by.y=c("Ganador2","mean","wm","Vuelta"))
+```
+
+```{r}
+str(EleccionesVacuna)
+```
+```{r}
+head(EleccionesVacuna)
+```
+
+```{r}
+Hipotesis1 = ggplot(EleccionesVacuna)+
+  geom_bar(aes(x=reorder(Ganador1,-wm),y=wm,fill=Ganador1), stat="identity", alpha=0.75) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  geom_text(aes(x=Ganador1,y=wm,label= paste0(round(wm,1),"%")),hjust=0.5, vjust=1.5) +
+  labs(x="Partido con mayoría de votos válidos",y="Porcentaje", title="Porcentaje de ciudadanos de 18 a más años completamente vacunados",subtitle = "Según partido con mayoría de votos válidos en la primera y segunda vuelta de las EG 2021 en el \ndistrito de domicilio") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20))+
+  guides(fill=FALSE)+
+  facet_wrap(~EleccionesVacuna$Vuelta, scales = "free_x")
+```
+```{r}
+Hipotesis1
+```
+
