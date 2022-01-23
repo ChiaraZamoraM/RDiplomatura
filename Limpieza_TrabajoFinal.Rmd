@@ -1,0 +1,128 @@
+---
+title: "Limpieza y preprocesamiento"
+output: html_notebook
+---
+
+```{r}
+### Carga de bases:
+
+#### 1. Personas vacunadas
+
+library(readr)
+library(archive)
+tf <- tempfile() ; td <- tempdir()
+file.path <- "https://cloud.minsa.gob.pe/s/oHF5JSLEk8KzpPW/download"
+download.file( file.path , tf , mode = "wb" )
+vacunas_covid <- read.csv(archive_read(tf, "TB_VACUNACION_COVID19.csv"))
+```
+
+```{r}
+#### 2. Ubigeos 
+
+ubigeos <- read_csv("https://cloud.minsa.gob.pe/s/GkfcJD8xKHJeCqn/download")
+```
+
+```{r}
+#### 3. Padrón de población
+
+tf2 <- tempfile() ; td <- tempdir()
+file.path2 <- "https://cloud.minsa.gob.pe/s/6J5obcebX6c8rQ8/download"
+download.file( file.path2 , tf2 , mode = "wb" )
+TB_PERSONA <- read.csv(archive_read(tf2, "TB_PERSONA.csv"))
+```
+
+```{r}
+#### 3.1. Resultados de la 1era vuelta
+library(rio)
+Resultados_1era_vuelta<-import("https://github.com/ChiaraZamoraM/RDiplomatura/raw/main/Resultados_1ra_vuelta_Elecciones_Preprocesados.xlsx")
+```
+
+
+```{r}
+#### 3.2. Resultados de la 2da vuelta
+
+library(rio)
+Resultados_2da_vuelta<-import("https://github.com/ChiaraZamoraM/RDiplomatura/raw/main/Resultados_Elecciones_Preprocesados.xlsx")
+```
+
+```{r}
+### Limpieza de bases
+
+#### 1. Padrón de población
+#a. Consignar año de nacimiento como número
+#b. Filtrar a los nacidos antes de 2004
+#c. Mantener a los fallecidos
+#d. Agregar los datos por ubigeo de domicilio
+
+names(TB_PERSONA)[names(TB_PERSONA) == 'ï..id_persona'] <- 'id_persona'
+
+names(vacunas_covid)[names(vacunas_covid) == 'ï..id_persona'] <- 'id_persona'
+
+TB_PERSONA$anho_nac=as.numeric(TB_PERSONA$anho_nac)
+
+Poblacion=subset(TB_PERSONA,anho_nac<2004)
+
+Poblacion[Poblacion=='NA'] <- NA
+
+Poblacion$fecha_fallecido <- as.Date(Poblacion$fecha_fallecido,format= "%d/%m/%Y")
+
+PoblacionCopia <- Poblacion[is.na(Poblacion$fecha_fallecido),]
+
+library(dplyr)
+
+PoblacionD18=aggregate(id_persona~id_ubigeo_domicilio,data=PoblacionCopia,FUN=length)
+```
+
+```{r}
+#### 2. Personas vacunadas
+#a. Mantener solo segundas dosis (pauta completa)
+#b. Filtrar a los compeltamente vacunados antes del 31 de diciembre. Combinar con población de 18 años a más. Agregar por ubigeo de domicilio.
+#c. Juntar las tres bases de las tres fechas con la base de población de 18 años a más.
+
+library(lubridate)
+
+Vacuna=subset(vacunas_covid,dosis==2)
+
+Vacuna$fecha_vacunacion1 <- ymd(Vacuna$fecha_vacunacion)
+
+Vacuna31Dic=subset(Vacuna, fecha_vacunacion1< "2021-12-31")
+
+PoblacionVacunada31Dic=merge(Vacuna31Dic,PoblacionCopia,by="id_persona")
+
+PoblacionVac31Dic=aggregate(id_persona~id_ubigeo_domicilio,data=PoblacionVacunada31Dic,FUN=length)
+
+names(PoblacionVac31Dic)[names(PoblacionVac31Dic) == 'id_persona'] <- 'Vac31Dic'
+
+PoblacionD18=merge(PoblacionVac31Dic, PoblacionD18)
+
+BaseDistrital=merge(PoblacionD18,ubigeos,by.x="id_ubigeo_domicilio",by.y="id_ubigeo")
+
+names(BaseDistrital)[names(BaseDistrital) == 'id_persona'] <- 'Poblacion18'
+
+BaseDistrital$Avance=BaseDistrital$Vac31Dic/BaseDistrital$Poblacion18*100
+```
+
+
+```{r}
+#### 4. Resultados de elecciones
+
+Resultados_1era_vuelta$Ganador1 <- Resultados_1era_vuelta$`Partido Ganador`
+
+Resultados_1era_vuelta=Resultados_1era_vuelta[c(1,30)]
+
+Resultados_2da_vuelta$Ganador2 <-ifelse(Resultados_2da_vuelta$PeruLibre>
+                                      Resultados_2da_vuelta$FuerzaPopular,
+                                      "PARTIDO POLITICO NACIONAL PERU LIBRE","FUERZA POPULAR")
+
+Resultados_2da_vuelta=Resultados_2da_vuelta[c(1,4)]
+
+Elecciones=merge(Resultados_1era_vuelta,Resultados_2da_vuelta)
+
+BaseDistrital$ubigeo_reniec2=as.numeric(BaseDistrital$ubigeo_reniec)
+
+BaseDistrital2=merge(BaseDistrital,Elecciones,by.x="ubigeo_reniec2",by.y="UBIGEO")
+```
+
+```{r}
+write.csv(BaseDistrital2,"BaseDistrital.csv")
+```
