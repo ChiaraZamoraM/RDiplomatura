@@ -77,3 +77,19 @@ Hipotesis1 = ggplot(EleccionesVacuna)+
 Hipotesis1
 ```
 
+a. Agregar a esta base los componentes del IDE. 
+```{r}
+IDH=import("https://github.com/ChiaraZamoraM/RDiplomatura/raw/main/IDH%202019.xlsx")
+colnames(IDH)= IDH[2,]
+IDH=IDH[!is.na(IDH$UBIGEO),]
+IDH=IDH[,c(1,7:10)]
+
+```
+
+b. EFA de esos componentes. 
+
+
+
+
+
+
