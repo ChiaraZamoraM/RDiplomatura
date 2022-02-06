@@ -82,11 +82,199 @@ a. Agregar a esta base los componentes del IDE.
 IDH=import("https://github.com/ChiaraZamoraM/RDiplomatura/raw/main/IDH%202019.xlsx")
 colnames(IDH)= IDH[2,]
 IDH=IDH[!is.na(IDH$UBIGEO),]
-IDH=IDH[,c(1,7:10)]
+IDH=IDH[-1,c(1,7:10)]
+IDH$UBIGEO=as.numeric(IDH$UBIGEO)
+```
 
+
+```{r}
+BaseDistrital2 = merge(BaseDistrital, IDH, by.x="ubigeo_inei", by.y="UBIGEO")
+```
+
+
+```{r}
+library(psych)
+library(tidyverse)
+```
+
+# ANÁLISIS FACTORIAL EXPLORATORIO
+
+Aplicamos un análisis factorial exploratorio a la misma data
+
+Revisamos:
+- Correlación entre las variables
+- Calculamos la matriz de correlaciones
+
+Vemos el número de factores recomendado:
+
+```{r}
+data= BaseDistrital2[,c(29:32)]
+data= as.data.frame(sapply(data, as.numeric))
+```
+
+
+```{r}
+fa.parallel(data,fa="pc")
+```
+
+```{r}
+pc <- prcomp(x=data,scale=TRUE, center=TRUE)
+```
+
+```{r}
+BaseDistrital2<- BaseDistrital2 %>% mutate(pc1=pc$x[,1])
+```
+
+```{r}
+nueva_data
+```
+
+
+
+```{r}
+summary(pc)
+```
+
+```{r}
+pc$rotation
+```
+
+```{r}
+fa.parallel(data,fa="fa")
+```
+
+Calculamos el análisis factorial
+
+```{r}
+factorial <- fa(data,nfactors = 2,cor = 'mixed',rotate = "varimax",fm="minres")
+```
+
+Analizamos los resultados con:
+
+```{r}
+print(factorial$loadings)
+```
+
+Podemos visualizar los loadings más representativos. 
+
+```{r}
+print(factorial$loadings,cutoff = 0.5)
+```
+
+Podemos visualizar los variables y su relación con las latentes creadas:
+
+```{r}
+fa.diagram(factorial)
+```
+
+
+## Evaluamos el Análisis Factorial Exploratorio solicitado
+
+- ¿Qué variables aportaron mas a los factores?
+
+```{r}
+sort(factorial$communality)
+```
+
+- ¿Qué variables contribuyen a mas de un factor?
+
+```{r}
+sort(factorial$complexity)
+```
+
+- ¿Qué variables tiene un componente "único" más grande?
+
+```{r}
+sort(factorial$uniquenesses)
+```
+
+## Paso 6: Guardamos los factores como nuevas variables
+
+¿Qué nombres les darías?
+
+Podemos crear un data set con sólo los factores creados
+
+```{r}
+factorial_casos<-as.data.frame(factorial$scores)
+head(factorial_casos)
+summary(factorial_casos)
+```
+
+o incluirlos en nuestro subset original
+
+```{r}
+data$factor1<- factorial_casos$MR1
+```
+
+También podemos normalizar los datos para verlo en una escala más amigable:
+
+```{r}
+#install.packages("BBmisc")
+library(BBmisc)
+data$factor1_normalizado = normalize(data$factor1, 
+                                        method = "range", 
+                                        margin=2, # by column
+                                        range = c(0, 100))
+summary(data$factor1_normalizado)
+hist(data$factor1_normalizado)
 ```
 
 b. EFA de esos componentes. 
+
+```{r}
+saveRDS(BaseDistrital2,"BaseDistrital2.RDS")
+```
+
+```{r}
+library(sf)
+library(ggplot2)
+library(ggpubr)
+library(tidyverse)
+library(ggrepel)
+library(repr)
+library(rjson)
+
+mapa <- st_read("C:/Users/soyma/Documents/GitHub/RDiplomatura/LIMITE_DISTRITAL_2020_INEI_geogpsperu_juansuyo_931381206.shp")
+
+mapa$UBIGEO=as.numeric(mapa$UBIGEO)
+
+mapadist = merge(mapa, BaseDistrital2, by.x= "UBIGEO", by.y="ubigeo_inei")
+```
+
+```{r}
+base1 = ggplot(data = mapadist) + theme_light()
+```
+
+```{r}
+mapaIDH = base1 +
+  geom_sf(aes(fill= pc1), colour = NA) + labs(fill = "IDH") +
+  geom_sf(data = mapadist,
+          fill = NA) + 
+  scale_fill_gradient(low = "lightpink",  high = "red") 
+
+
+mapaIDH
+```
+
+```{r}
+base2 = ggplot(data = mapadist) + theme_light()
+```
+
+```{r}
+mapaVacunacion = base2 +
+  geom_sf(aes(fill= Avance)) + labs(fill = "Porcentaje") +
+  geom_sf(data = mapadist,
+          fill = NA) + 
+  scale_fill_gradient(low = "skyblue",  high = "blue") 
+
+
+mapaVacunacion
+```
+
+```{r}
+ggarrange(mapaIDH, mapaVacunacion, nrow=1)
+```
+
 
 
 
