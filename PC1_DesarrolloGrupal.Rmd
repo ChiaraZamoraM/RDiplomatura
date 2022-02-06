@@ -59,6 +59,7 @@ EleccionesVacuna=merge(Elecciones1, Elecciones2, all=TRUE, by.x=c("Ganador1","me
 ```{r}
 str(EleccionesVacuna)
 ```
+
 ```{r}
 head(EleccionesVacuna)
 ```
@@ -67,14 +68,19 @@ head(EleccionesVacuna)
 Hipotesis1 = ggplot(EleccionesVacuna)+
   geom_bar(aes(x=reorder(Ganador1,-wm),y=wm,fill=Ganador1), stat="identity", alpha=0.75) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
-  geom_text(aes(x=Ganador1,y=wm,label= paste0(round(wm,1),"%")),hjust=0.5, vjust=1.5) +
+  geom_text(aes(x=Ganador1,y=wm,label= paste0(round(wm,1),"%")),hjust=0.5, vjust=1.5, size=2.5) +
   labs(x="Partido con mayoría de votos válidos",y="Porcentaje", title="Porcentaje de ciudadanos de 18 a más años completamente vacunados",subtitle = "Según partido con mayoría de votos válidos en la primera y segunda vuelta de las EG 2021 en el \ndistrito de domicilio") +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 20))+
   guides(fill=FALSE)+
   facet_wrap(~EleccionesVacuna$Vuelta, scales = "free_x")
 ```
+
 ```{r}
 Hipotesis1
+```
+
+```{r}
+ggsave("Hipotesis.png", width = 8, height = 4)
 ```
 
 a. Agregar a esta base los componentes del IDE. 
@@ -126,10 +132,8 @@ BaseDistrital2<- BaseDistrital2 %>% mutate(pc1=pc$x[,1])
 ```
 
 ```{r}
-nueva_data
+summary(BaseDistrital2$pc1)
 ```
-
-
 
 ```{r}
 summary(pc)
@@ -226,6 +230,11 @@ saveRDS(BaseDistrital2,"BaseDistrital2.RDS")
 ```
 
 ```{r}
+BaseDistrital2=BaseDistrital2[,c("ubigeo_inei","departamento","provincia",
+                                 "distrito","Avance","Ganador1","Ganador2","pc1")]
+```
+
+```{r}
 library(sf)
 library(ggplot2)
 library(ggpubr)
@@ -239,6 +248,23 @@ mapa <- st_read("C:/Users/soyma/Documents/GitHub/RDiplomatura/LIMITE_DISTRITAL_2
 mapa$UBIGEO=as.numeric(mapa$UBIGEO)
 
 mapadist = merge(mapa, BaseDistrital2, by.x= "UBIGEO", by.y="ubigeo_inei")
+```
+
+```{r}
+mapadist1 =mapadist %>% spread(Ganador1, Avance)
+```
+
+```{r}
+mapadist2 =mapadist %>% spread(Ganador2, Avance)
+```
+
+
+```{r}
+saveRDS(mapadist1,"MapaDist1.RDS")
+```
+
+```{r}
+saveRDS(mapadist,"MapaDist.RDS")
 ```
 
 ```{r}
