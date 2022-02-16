@@ -172,59 +172,6 @@ fa.diagram(factorial)
 ```
 
 
-## Evaluamos el Análisis Factorial Exploratorio solicitado
-
-- ¿Qué variables aportaron mas a los factores?
-
-```{r}
-sort(factorial$communality)
-```
-
-- ¿Qué variables contribuyen a mas de un factor?
-
-```{r}
-sort(factorial$complexity)
-```
-
-- ¿Qué variables tiene un componente "único" más grande?
-
-```{r}
-sort(factorial$uniquenesses)
-```
-
-## Paso 6: Guardamos los factores como nuevas variables
-
-¿Qué nombres les darías?
-
-Podemos crear un data set con sólo los factores creados
-
-```{r}
-factorial_casos<-as.data.frame(factorial$scores)
-head(factorial_casos)
-summary(factorial_casos)
-```
-
-o incluirlos en nuestro subset original
-
-```{r}
-data$factor1<- factorial_casos$MR1
-```
-
-También podemos normalizar los datos para verlo en una escala más amigable:
-
-```{r}
-#install.packages("BBmisc")
-library(BBmisc)
-data$factor1_normalizado = normalize(data$factor1, 
-                                        method = "range", 
-                                        margin=2, # by column
-                                        range = c(0, 100))
-summary(data$factor1_normalizado)
-hist(data$factor1_normalizado)
-```
-
-b. EFA de esos componentes. 
-
 ```{r}
 saveRDS(BaseDistrital2,"BaseDistrital2.RDS")
 ```
@@ -300,10 +247,6 @@ mapaVacunacion
 ```{r}
 ggarrange(mapaIDH, mapaVacunacion, nrow=1)
 ```
-
-
-
-
 
 
 

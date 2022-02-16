@@ -119,7 +119,7 @@ server <- function(input, output) {
             st_transform(crs= "+init=epsg:4326") %>%
             leaflet() %>%
             addProviderTiles(provider= "CartoDB.Positron") %>%
-            addPolygons(label= paste0(partido_mapadist()$departamento,': ', round(partido_mapadist()$Avance),"%"),
+            addPolygons(label= paste0(partido_mapadist()$distrito,': ', round(partido_mapadist()$Avance),"%"),
                         stroke = TRUE, 
                         smoothFactor =  .5,
                         opacity = 1,
@@ -153,7 +153,7 @@ server <- function(input, output) {
             st_transform(crs= "+init=epsg:4326") %>%
             leaflet() %>%
             addProviderTiles(provider= "CartoDB.Positron") %>%
-            addPolygons(label= paste0(partido_mapadist()$departamento,': ', round(partido_mapadist()$Avance),"%"),
+            addPolygons(label= paste0(partido_mapadist()$distrito,': ', round(partido_mapadist()$Avance),"%"),
                         stroke = TRUE, 
                         smoothFactor =  .5,
                         opacity = 1,

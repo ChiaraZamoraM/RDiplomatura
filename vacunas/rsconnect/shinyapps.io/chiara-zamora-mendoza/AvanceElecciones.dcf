@@ -5,9 +5,9 @@ account: chiara-zamora-mendoza
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5590657
-bundleId: 5549093
+bundleId: 5549183
 url: https://chiara-zamora-mendoza.shinyapps.io/AvanceElecciones/
-when: 1644161427.74677
-lastSyncTime: 1644161427.74677
+when: 1644163895.61347
+lastSyncTime: 1644163895.61347
 asMultiple: FALSE
 asStatic: FALSE
